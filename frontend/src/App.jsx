@@ -13,11 +13,15 @@ function App() {
     passType: 'Monthly'
   });
 
+  // ✅ Use your Render backend URL here
+  const API_BASE = 'https://bus-pass-backend-rkbf.onrender.com/api/passes';
+
   // 🧾 Load existing passes
-  const load = () =>
-    axios.get('http://localhost:7001/api/passes')
+  const load = () => {
+    axios.get(API_BASE)
       .then((r) => setPasses(r.data))
-      .catch((err) => console.error(err));
+      .catch((err) => console.error('Error loading passes:', err));
+  };
 
   useEffect(() => {
     load();
@@ -27,7 +31,7 @@ function App() {
   const submit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:7001/api/passes', form);
+      const res = await axios.post(API_BASE, form);
       alert(res.data.status);
       setForm({
         name: '',
@@ -48,15 +52,23 @@ function App() {
   const renew = async (id) => {
     const extendBy = prompt('Extend by (Monthly/Quarterly/Yearly):', 'Monthly');
     if (!extendBy) return;
-    await axios.put(`http://localhost:7001/api/passes/${id}/renew`, { extendBy });
-    load();
+    try {
+      await axios.put(`${API_BASE}/${id}/renew`, { extendBy });
+      load();
+    } catch (err) {
+      console.error('Error renewing pass:', err);
+    }
   };
 
   // ❌ Delete pass
   const remove = async (id) => {
     if (!confirm('Delete this pass?')) return;
-    await axios.delete(`http://localhost:7001/api/passes/${id}`);
-    load();
+    try {
+      await axios.delete(`${API_BASE}/${id}`);
+      load();
+    } catch (err) {
+      console.error('Error deleting pass:', err);
+    }
   };
 
   return (
