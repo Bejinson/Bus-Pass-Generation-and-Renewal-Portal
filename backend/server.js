@@ -3,7 +3,6 @@ require('dotenv').config();  // ✅ Load environment variables from .env file
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const path = require('path');
 const Pass = require('./models/Pass');
 
 const app = express();
@@ -16,6 +15,11 @@ app.use(express.json());
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
+
+// ✅ Default route for Render testing
+app.get('/', (req, res) => {
+  res.send('🚍 Bus Pass Backend is running successfully!');
+});
 
 // ✅ Create Pass (no photo upload)
 app.post('/api/passes', async (req, res) => {
