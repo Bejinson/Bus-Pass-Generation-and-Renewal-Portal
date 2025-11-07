@@ -1,8 +1,15 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
+import Login from './Login';
+import Signup from './Signup';
+
+axios.defaults.baseURL = "https://bus-pass-backend-rkbf.onrender.com";
+axios.defaults.headers.common["Authorization"] =
+  "Bearer " + localStorage.getItem("token");
 
 function App() {
+  const [loggedIn, setLoggedIn] = useState(!!localStorage.getItem("token"));
   const [passes, setPasses] = useState([]);
   const [form, setForm] = useState({
     name: '',
@@ -13,10 +20,15 @@ function App() {
     passType: 'Monthly'
   });
 
-  // ✅ Use your Render backend URL here
-  const API_BASE = 'https://bus-pass-backend-rkbf.onrender.com/api/passes';
+  const API_BASE = '/api/passes';
 
-  // 🧾 Load existing passes
+  // ✅ Logout
+  const logout = () => {
+    localStorage.removeItem("token");
+    setLoggedIn(false);
+  };
+
+  // ✅ Load passes
   const load = () => {
     axios.get(API_BASE)
       .then((r) => setPasses(r.data))
@@ -24,10 +36,10 @@ function App() {
   };
 
   useEffect(() => {
-    load();
-  }, []);
+    if (loggedIn) load();
+  }, [loggedIn]);
 
-  // ➕ Create new pass (without file)
+  // ✅ Create pass
   const submit = async (e) => {
     e.preventDefault();
     try {
@@ -48,10 +60,11 @@ function App() {
     }
   };
 
-  // 🔁 Renew pass
+  // ✅ Renew pass
   const renew = async (id) => {
     const extendBy = prompt('Extend by (Monthly/Quarterly/Yearly):', 'Monthly');
     if (!extendBy) return;
+
     try {
       await axios.put(`${API_BASE}/${id}/renew`, { extendBy });
       load();
@@ -60,9 +73,10 @@ function App() {
     }
   };
 
-  // ❌ Delete pass
+  // ✅ Delete pass
   const remove = async (id) => {
     if (!confirm('Delete this pass?')) return;
+
     try {
       await axios.delete(`${API_BASE}/${id}`);
       load();
@@ -71,10 +85,25 @@ function App() {
     }
   };
 
+  // ✅ If NOT logged in → show login/signup
+  if (!loggedIn) {
+    return (
+      <div className="container p-4">
+        <Login setLoggedIn={setLoggedIn} />
+        <Signup />
+      </div>
+    );
+  }
+
+  // ✅ Logged in → show pass dashboard
   return (
     <div className="container py-4">
-      <h2>🚌 Bus Pass Portal</h2>
-      <form onSubmit={submit} className="row g-2">
+      <div className="d-flex justify-content-between">
+        <h2>🚌 Bus Pass Portal</h2>
+        <button className="btn btn-danger" onClick={logout}>Logout</button>
+      </div>
+
+      <form onSubmit={submit} className="row g-2 mt-3">
         <input
           required
           className="form-control"
@@ -100,8 +129,8 @@ function App() {
           value={form.idNumber}
           onChange={(e) => setForm({ ...form, idNumber: e.target.value })}
         />
-        <select
-          className="form-select"
+
+        <select className="form-select"
           value={form.idType}
           onChange={(e) => setForm({ ...form, idType: e.target.value })}
         >
@@ -109,8 +138,8 @@ function App() {
           <option>Employee</option>
           <option>General</option>
         </select>
-        <select
-          className="form-select"
+
+        <select className="form-select"
           value={form.passType}
           onChange={(e) => setForm({ ...form, passType: e.target.value })}
         >
@@ -118,11 +147,13 @@ function App() {
           <option>Quarterly</option>
           <option>Yearly</option>
         </select>
+
         <button className="btn btn-primary mt-2">Apply</button>
       </form>
 
       <hr />
       <h4>Existing Passes</h4>
+
       <table className="table table-bordered">
         <thead className="table-light">
           <tr>
